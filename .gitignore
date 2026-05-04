@@ -1,0 +1,110 @@
+# =========================
+# Variáveis de ambiente
+# =========================
+.env
+.env.*
+!.env.example
+!*.env.example
+
+# =========================
+# Pastas .git aninhadas (legacy de subprojetos)
+# =========================
+.git.bak/
+**/.git.bak/
+
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+
+# =========================
+# Builds
+# =========================
+dist/
+build/
+out/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# =========================
+# Expo / React Native
+# =========================
+.expo/
+.expo-shared/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.kotlin/
+# pastas nativas geradas pelo prebuild
+apps/mobile/ios/
+apps/mobile/android/
+
+# =========================
+# Python (services/ia)
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.python-version
+
+# =========================
+# Vercel
+# =========================
+.vercel
+
+# =========================
+# IDEs / Editores
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+# Sistema operacional
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+
+# =========================
+# Logs e coverage
+# =========================
+logs/
+*.log
+coverage/
+.nyc_output/
+
+# =========================
+# Claude Code (configs locais)
+# =========================
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# =========================
+# Documentação interna (não publicar)
+# =========================
+docs/superpowers/
