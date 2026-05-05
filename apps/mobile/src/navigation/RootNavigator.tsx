@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +9,7 @@ import AddTransactionScreen from '../screens/transactions/AddTransactionScreen';
 import TransactionDetailScreen from '../screens/transactions/TransactionDetailScreen';
 import EditTransactionScreen from '../screens/transactions/EditTransactionScreen';
 import { TransacaoData } from '../services/api';
+import { T } from '../theme/tokens';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -19,8 +21,27 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function BootSplash() {
+  return (
+    <View style={{
+      flex: 1, backgroundColor: T.bg,
+      justifyContent: 'center', alignItems: 'center', gap: 16,
+    }}>
+      <Text style={{
+        fontSize: 22, fontWeight: '800', color: T.text, letterSpacing: -0.5,
+      }}>
+        FinanceFlow
+      </Text>
+      <ActivityIndicator color={T.violet} />
+    </View>
+  );
+}
+
 export function RootNavigator() {
-  const { token, usuario } = useAuth();
+  const { token, usuario, loading } = useAuth();
+
+  if (loading) return <BootSplash />;
+
   const hasAccount = !!token;
   const hasDomicilio = !!usuario?.domicilio_id;
 
