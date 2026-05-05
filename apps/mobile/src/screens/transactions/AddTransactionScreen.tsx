@@ -15,6 +15,9 @@ import { CATEGORIAS } from '../../constants/categories';
 import { useCategorias } from '../../context/CategoriasContext';
 import { useSugestaoCategoria } from '../../hooks/useSugestaoCategoria';
 import { SugestaoCategoriaChip } from '../../components/SugestaoCategoriaChip';
+import { CommandBar } from '../../components/CommandBar';
+import { PreviewCard } from '../../components/PreviewCard';
+import type { InterpretacaoResposta } from '../../services/api';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'AddTransaction'> };
 type Tipo = 'despesa' | 'receita';
@@ -61,6 +64,15 @@ export default function AddTransactionScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const popAnim = useRef(new Animated.Value(0)).current;
+
+  const [commandText, setCommandText] = useState('');
+  type CapturaState =
+    | { tipo: 'idle' }
+    | { tipo: 'interpretando' }
+    | { tipo: 'com-preview'; data: InterpretacaoResposta }
+    | { tipo: 'erro' };
+  const [captura, setCaptura] = useState<CapturaState>({ tipo: 'idle' });
+  const camposOpacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (saved) {
@@ -120,6 +132,66 @@ export default function AddTransactionScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleInterpretar() {
+    const texto = commandText.trim();
+    if (texto.length < 3 || !token) return;
+
+    setCaptura({ tipo: 'interpretando' });
+    Animated.timing(camposOpacityAnim, {
+      toValue: 0.4, duration: 200, useNativeDriver: true,
+    }).start();
+
+    try {
+      const data = await api.transacoes.interpretar({ texto }, token);
+      // Se nada utilizável, vira erro
+      const algumPreenchido =
+        data.descricao || data.valor != null || data.data_transacao || data.tipo || data.categoria_id;
+      if (!algumPreenchido || data.confianca_geral === 0) {
+        setCaptura({ tipo: 'erro' });
+      } else {
+        setCaptura({ tipo: 'com-preview', data });
+      }
+    } catch {
+      setCaptura({ tipo: 'erro' });
+    }
+  }
+
+  function handleDescartar() {
+    setCaptura({ tipo: 'idle' });
+    Animated.timing(camposOpacityAnim, {
+      toValue: 1, duration: 200, useNativeDriver: true,
+    }).start();
+  }
+
+  function handleAplicar() {
+    if (captura.tipo !== 'com-preview') return;
+    const i = captura.data;
+
+    // Aplica os campos disponíveis
+    if (i.valor != null) {
+      const formatted = i.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      setValorRaw(formatted);
+    }
+    if (i.descricao) setDescricao(i.descricao);
+    if (i.data_transacao) {
+      const [y, m, d] = i.data_transacao.split('-').map(Number);
+      setDataSelecionada(new Date(y, m - 1, d));
+    }
+    if (i.tipo === 'despesa' || i.tipo === 'receita') setTipo(i.tipo);
+    if (i.categoria_id) {
+      setCategoriaIdSelecionada(i.categoria_id);
+      setCategoriaManuallyOverridden(true); // evita que sugestão A sobrescreva
+      setSugestaoVisivel(false);
+    }
+
+    // Limpa command bar e volta opacidade
+    setCommandText('');
+    setCaptura({ tipo: 'idle' });
+    Animated.timing(camposOpacityAnim, {
+      toValue: 1, duration: 280, useNativeDriver: true,
+    }).start();
   }
 
   if (saved) {
@@ -195,6 +267,36 @@ export default function AddTransactionScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <CommandBar
+            value={commandText}
+            onChangeText={setCommandText}
+            onSubmit={handleInterpretar}
+            loading={captura.tipo === 'interpretando'}
+            disabled={false}
+          />
+
+          {captura.tipo === 'com-preview' && (
+            <PreviewCard
+              interpretacao={captura.data}
+              onAplicar={handleAplicar}
+              onDescartar={handleDescartar}
+            />
+          )}
+
+          {captura.tipo === 'erro' && (
+            <PreviewCard
+              interpretacao={{
+                descricao: null, valor: null, data_transacao: null,
+                tipo: null, categoria_id: null, categoria_nome: null,
+                confianca_geral: 0,
+              }}
+              onAplicar={() => {}}
+              onDescartar={handleDescartar}
+              modoErro
+            />
+          )}
+
+          <Animated.View style={{ opacity: camposOpacityAnim }}>
           {/* Toggle tipo */}
           <View style={{
             flexDirection: 'row', backgroundColor: T.card,
@@ -337,6 +439,7 @@ export default function AddTransactionScreen({ navigation }: Props) {
             })}
           </View>
           <SugestaoCategoriaChip visible={sugestaoVisivel} />
+          </Animated.View>
         </ScrollView>
 
         {/* Botão principal — FORA do ScrollView */}
