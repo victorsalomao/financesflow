@@ -2,6 +2,7 @@
   "expo": {
     "name": "FinanceFlow",
     "slug": "financeflow",
+    "description": "App de controle financeiro para casais — gastos compartilhados, divisão de contas e metas conjuntas com captura inteligente por linguagem natural.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
