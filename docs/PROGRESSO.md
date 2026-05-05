@@ -159,7 +159,7 @@ financesflow/
 │           ├── constants/
 │           │   └── categories.ts      # strings hardcoded de categorias com emoji + cor
 │           │                          # (resíduo do MVP, será substituído por CategoriasContext)
-│           └── navigation/
+│           ├── navigation/
 │               ├── RootNavigator.tsx
 │               ├── AuthNavigator.tsx
 │               └── AppNavigator.tsx
@@ -277,4 +277,4 @@ cd services/ia
 - [ ] Tela de detalhes do domicílio com código de convite
 - [ ] Push notifications
 
-> **Bug pendente:** categoria selecionada manualmente não está sendo enviada ao backend (`AddTransactionScreen.handleSalvar`). Resolvido na entrega "Captura Assistida + Robustez do MVP".
+> **Bug pendente:** categoria selecionada manualmente não está sendo enviada ao backend (`AddTransactionScreen.handleSalvar`). Será resolvido na entrega "Captura Assistida + Robustez do MVP" (Sessão 3, Task 6).
