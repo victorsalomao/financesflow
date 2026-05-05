@@ -93,14 +93,16 @@ Usou apenas pacotes já instalados + `@expo/vector-icons` (bundled no Expo SDK 5
 
 ---
 
-## Sessão 3 — Captura Assistida + Robustez (planejada para 2026-05-04)
+## Sessão 3 — Captura Assistida + Robustez (executada em 2026-05-05)
+
+### Status: ✅ Implementação concluída em 2026-05-05 (validação manual em dispositivo pendente)
 
 ### Escopo
-- Persistência de token (AsyncStorage)
-- Fix do bug de categoria não enviada ao backend
-- Refresh automático do Dashboard e Lista após operações
-- Sugestão de categoria via IA conforme digita descrição
-- Captura assistida: command bar com parser de linguagem natural
+- ✅ Persistência de token (AsyncStorage)
+- ✅ Fix do bug de categoria não enviada ao backend
+- ✅ Refresh automático do Dashboard e Lista após operações
+- ✅ Sugestão de categoria via IA conforme digita descrição
+- ✅ Captura assistida: command bar com parser de linguagem natural
 
 ### Spec
 `docs/superpowers/specs/2026-05-04-captura-assistida-design.md`
