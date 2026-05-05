@@ -21,6 +21,12 @@ export const filtrosTransacaoSchema = z.object({
   limite: z.coerce.number().int().min(1).max(100).default(20),
 })
 
+export const sugerirCategoriaSchema = z.object({
+  descricao: z.string().min(1).max(500),
+  valor: z.number().positive(),
+})
+
 export type CriarTransacaoInput = z.infer<typeof criarTransacaoSchema>
 export type AtualizarTransacaoInput = z.infer<typeof atualizarTransacaoSchema>
 export type FiltrosTransacaoInput = z.infer<typeof filtrosTransacaoSchema>
+export type SugerirCategoriaInput = z.infer<typeof sugerirCategoriaSchema>

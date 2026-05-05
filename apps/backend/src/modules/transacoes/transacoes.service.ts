@@ -1,6 +1,6 @@
 import { supabaseAuth } from '../../lib/supabase'
 import { categorizarTransacao } from '../../lib/ia'
-import type { CriarTransacaoInput, AtualizarTransacaoInput, FiltrosTransacaoInput } from './transacoes.schema'
+import type { CriarTransacaoInput, AtualizarTransacaoInput, FiltrosTransacaoInput, SugerirCategoriaInput } from './transacoes.schema'
 
 // Usa fn SECURITY DEFINER — bypassa RLS e retorna o domicilio_id pelo JWT do usuário
 async function getDomicilioId(db: ReturnType<typeof supabaseAuth>): Promise<string> {
@@ -106,5 +106,34 @@ export async function deletar(authId: string, token: string, id: string) {
   if (error) {
     console.error('[transacoes.deletar] Supabase error:', error)
     throw new Error(error.message || 'Erro ao deletar transação')
+  }
+}
+
+export async function sugerirCategoria(
+  authId: string,
+  token: string,
+  input: SugerirCategoriaInput,
+) {
+  const sugestao = await categorizarTransacao(input.descricao, input.valor)
+  if (!sugestao) {
+    return { categoria_id: null, categoria_nome: 'Outros', confianca: 0 }
+  }
+
+  // Resolve nome -> id consultando categorias do domicílio
+  const db = supabaseAuth(token)
+  const domicilioId = await getDomicilioId(db)
+
+  const { data: cat } = await db
+    .from('categorias')
+    .select('id, nome')
+    .or(`domicilio_id.is.null,domicilio_id.eq.${domicilioId}`)
+    .eq('nome', sugestao.categoria)
+    .limit(1)
+    .maybeSingle()
+
+  return {
+    categoria_id: cat?.id ?? null,
+    categoria_nome: sugestao.categoria,
+    confianca: sugestao.confianca,
   }
 }
