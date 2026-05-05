@@ -124,6 +124,8 @@ export const api = {
       request<null>('DELETE', `/transacoes/${id}`, undefined, token),
     sugerirCategoria: (data: { descricao: string; valor: number }, token: string) =>
       request<SugestaoCategoria>('POST', '/transacoes/sugerir-categoria', data, token),
+    interpretar: (data: { texto: string }, token: string) =>
+      request<InterpretacaoResposta>('POST', '/transacoes/interpretar', data, token),
   },
   metas: {
     listar: (token: string) =>
@@ -207,6 +209,16 @@ export interface SugestaoCategoria {
   categoria_id: string | null;
   categoria_nome: string;
   confianca: number;
+}
+
+export interface InterpretacaoResposta {
+  descricao: string | null;
+  valor: number | null;
+  data_transacao: string | null;
+  tipo: 'despesa' | 'receita' | null;
+  categoria_id: string | null;
+  categoria_nome: string | null;
+  confianca_geral: number;
 }
 
 export interface CategoriaCatalogo {
