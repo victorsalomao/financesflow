@@ -13,9 +13,11 @@
       "backgroundColor": "#09091A"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.victorsalomao.financeflow"
     },
     "android": {
+      "package": "com.victorsalomao.financeflow",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#09091A"
