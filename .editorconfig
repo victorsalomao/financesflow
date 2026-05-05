@@ -1,0 +1,28 @@
+# EditorConfig — https://editorconfig.org
+# Padroniza indentação, charset e line endings entre editores (VS Code, JetBrains, Vim, etc.)
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Python segue PEP 8 (4 espaços)
+[*.py]
+indent_size = 4
+
+# Markdown precisa preservar trailing whitespace (hardbreaks com 2 espaços)
+[*.md]
+trim_trailing_whitespace = false
+
+# Makefiles exigem TAB literal
+[Makefile]
+indent_style = tab
+
+# PowerShell mantém CRLF (interpretador Windows espera assim)
+[*.ps1]
+end_of_line = crlf
