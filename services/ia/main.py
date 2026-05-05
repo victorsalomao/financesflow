@@ -67,6 +67,63 @@ class CategorizarResposta(BaseModel):
     confianca: float
 
 
+PROMPT_INTERPRETAR = """Você é um interpretador de transações financeiras pessoais brasileiras.
+Recebe uma frase em linguagem natural e extrai os campos de uma transação.
+
+Campos a extrair:
+- descricao: texto curto e padronizado (sem datas, sem valores, sem marcadores temporais)
+- valor: número decimal positivo em reais (ex.: 89.90)
+- data: data ISO YYYY-MM-DD. Resolva datas relativas com base em data_referencia:
+    "hoje" = data_referencia
+    "ontem" = data_referencia - 1 dia
+    "anteontem" = data_referencia - 2 dias
+    "sexta", "sábado" etc. = a ocorrência mais recente no passado
+    "semana passada" = 7 dias antes de data_referencia
+  Se não houver pista de data, retorne null.
+- tipo: "despesa" ou "receita".
+    Use "receita" para: salário, freelance, venda, transferência recebida, pix recebido, rendimento.
+    Demais casos: "despesa".
+- categoria: EXATAMENTE uma das categorias fornecidas em categorias_disponiveis, ou null.
+  Não invente categorias. Se nenhuma se encaixar, retorne null.
+- confianca_geral: número 0.0 a 1.0. Reflete sua certeza no conjunto, não a média dos campos.
+
+Regras invioláveis:
+- Campos não detectáveis: null. Não invente.
+- Valores aceitos como número: "89,90", "R$ 89,90", "89.90", "1.234,56" → 1234.56
+- Responda APENAS com JSON válido, sem markdown, sem explicação.
+
+Exemplo:
+Frase: "Almoço Outback ontem 89,90"
+data_referencia: "2026-05-04"
+categorias_disponiveis: ["Alimentação", "Transporte", "Moradia", "Lazer", "Outros"]
+Resposta:
+{"descricao": "Almoço Outback", "valor": 89.90, "data": "2026-05-03", "tipo": "despesa", "categoria": "Alimentação", "confianca_geral": 0.92}
+"""
+
+
+class InterpretarInput(BaseModel):
+    texto: str
+    data_referencia: str
+    categorias_disponiveis: list[str]
+
+    @field_validator("texto")
+    @classmethod
+    def texto_nao_vazio(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("texto não pode ser vazio")
+        return v
+
+
+class InterpretarResposta(BaseModel):
+    descricao: str | None
+    valor: float | None
+    data: str | None
+    tipo: str | None
+    categoria: str | None
+    confianca_geral: float
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -114,3 +171,65 @@ async def categorizar(body: CategorizarInput):
     except Exception as e:
         logger.error("Erro ao chamar OpenAI: %s", e)
         return CategorizarResposta(categoria="Outros", confianca=0.0)
+
+
+@app.post("/interpretar", response_model=InterpretarResposta)
+async def interpretar(body: InterpretarInput):
+    categorias_str = ", ".join(body.categorias_disponiveis) if body.categorias_disponiveis else "(nenhuma)"
+    mensagem_usuario = (
+        f"data_referencia: {body.data_referencia}\n"
+        f"categorias_disponiveis: [{categorias_str}]\n\n"
+        f"Frase: {body.texto}"
+    )
+
+    fallback = InterpretarResposta(
+        descricao=None, valor=None, data=None,
+        tipo=None, categoria=None, confianca_geral=0.0,
+    )
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": PROMPT_INTERPRETAR},
+                {"role": "user", "content": mensagem_usuario},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1,
+            max_tokens=200,
+        )
+
+        content = response.choices[0].message.content or "{}"
+        resultado = json.loads(content)
+
+        # Sanitização: garante que categoria está dentro do conjunto fornecido
+        categoria = resultado.get("categoria")
+        if categoria is not None and categoria not in set(body.categorias_disponiveis):
+            logger.warning("Categoria fora do conjunto: %s — usando null", categoria)
+            categoria = None
+
+        # Sanitização: tipo só pode ser despesa/receita/null
+        tipo = resultado.get("tipo")
+        if tipo not in ("despesa", "receita", None):
+            tipo = None
+
+        # Sanitização: confiança no range
+        confianca = float(resultado.get("confianca_geral", 0.0))
+        confianca = max(0.0, min(1.0, confianca))
+
+        return InterpretarResposta(
+            descricao=resultado.get("descricao"),
+            valor=resultado.get("valor"),
+            data=resultado.get("data"),
+            tipo=tipo,
+            categoria=categoria,
+            confianca_geral=confianca,
+        )
+
+    except json.JSONDecodeError as e:
+        logger.error("Resposta da IA não é JSON válido: %s", e)
+        return fallback
+
+    except Exception as e:
+        logger.error("Erro ao chamar OpenAI em /interpretar: %s", e)
+        return fallback
