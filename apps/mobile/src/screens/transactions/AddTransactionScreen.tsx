@@ -13,6 +13,8 @@ import { useAuth } from '../../context/AuthContext';
 import { T } from '../../theme/tokens';
 import { CATEGORIAS } from '../../constants/categories';
 import { useCategorias } from '../../context/CategoriasContext';
+import { useSugestaoCategoria } from '../../hooks/useSugestaoCategoria';
+import { SugestaoCategoriaChip } from '../../components/SugestaoCategoriaChip';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'AddTransaction'> };
 type Tipo = 'despesa' | 'receita';
@@ -52,6 +54,9 @@ export default function AddTransactionScreen({ navigation }: Props) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   const [categoriaIdSelecionada, setCategoriaIdSelecionada] = useState<string | null>(null);
+  const [categoriaManuallyOverridden, setCategoriaManuallyOverridden] = useState(false);
+  const [sugestaoVisivel, setSugestaoVisivel] = useState(false);
+  const sugestao = useSugestaoCategoria(descricao, parseValor(valorRaw), token);
   const { categorias, getByNome } = useCategorias();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -64,6 +69,19 @@ export default function AddTransactionScreen({ navigation }: Props) {
       return () => clearTimeout(t);
     }
   }, [saved]);
+
+  // Pré-seleciona categoria sugerida quando confiança alta e usuário não trocou manualmente
+  useEffect(() => {
+    if (
+      sugestao &&
+      sugestao.categoria_id &&
+      sugestao.confianca >= 0.7 &&
+      !categoriaManuallyOverridden
+    ) {
+      setCategoriaIdSelecionada(sugestao.categoria_id);
+      setSugestaoVisivel(true);
+    }
+  }, [sugestao, categoriaManuallyOverridden]);
 
   const isDespesa = tipo === 'despesa';
   const accentColor = isDespesa ? T.rose : T.emerald;
@@ -294,7 +312,11 @@ export default function AddTransactionScreen({ navigation }: Props) {
               return (
                 <Pressable
                   key={cat.id}
-                  onPress={() => setCategoriaIdSelecionada(selected ? null : cat.id)}
+                  onPress={() => {
+                    setCategoriaIdSelecionada(selected ? null : cat.id);
+                    setCategoriaManuallyOverridden(true);
+                    setSugestaoVisivel(false);
+                  }}
                   style={{
                     width: '22.5%', aspectRatio: 1, borderRadius: 14,
                     backgroundColor: selected ? cor + '22' : T.card,
@@ -314,6 +336,7 @@ export default function AddTransactionScreen({ navigation }: Props) {
               );
             })}
           </View>
+          <SugestaoCategoriaChip visible={sugestaoVisivel} />
         </ScrollView>
 
         {/* Botão principal — FORA do ScrollView */}
