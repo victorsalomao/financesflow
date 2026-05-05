@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { saveAuth, loadAuth, clearAuth } from '../services/storage';
 
 export interface UsuarioData {
   id: string;
@@ -21,6 +22,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
+  loading: boolean;
   signIn: (token: string, usuario: UsuarioData) => void;
   signOut: () => void;
   updateUsuario: (usuario: UsuarioData) => void;
@@ -31,6 +33,29 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>({ token: null, usuario: null, domicilio: null });
+  const [loading, setLoading] = useState(true);
+
+  // Restaura sessão ao montar
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const stored = await loadAuth();
+      if (mounted && stored) {
+        setAuth({ token: stored.token, usuario: stored.usuario, domicilio: stored.domicilio });
+      }
+      if (mounted) setLoading(false);
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Persiste a cada mudança relevante (depois do boot)
+  useEffect(() => {
+    if (loading) return;
+    if (auth.token && auth.usuario) {
+      saveAuth({ token: auth.token, usuario: auth.usuario, domicilio: auth.domicilio })
+        .catch(() => { /* falha de write é não-bloqueante; sessão persiste em memória */ });
+    }
+  }, [auth, loading]);
 
   function signIn(token: string, usuario: UsuarioData) {
     setAuth(prev => ({ ...prev, token, usuario }));
@@ -38,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function signOut() {
     setAuth({ token: null, usuario: null, domicilio: null });
+    clearAuth().catch(() => { /* não-bloqueante */ });
   }
 
   function updateUsuario(usuario: UsuarioData) {
@@ -49,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...auth, signIn, signOut, updateUsuario, updateDomicilio }}>
+    <AuthContext.Provider value={{ ...auth, loading, signIn, signOut, updateUsuario, updateDomicilio }}>
       {children}
     </AuthContext.Provider>
   );
