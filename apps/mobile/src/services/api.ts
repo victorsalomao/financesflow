@@ -133,6 +133,10 @@ export const api = {
     deletar: (id: string, token: string) =>
       request<null>('DELETE', `/metas/${id}`, undefined, token),
   },
+  categorias: {
+    listar: (token: string) =>
+      request<CategoriaCatalogo[]>('GET', '/categorias', undefined, token),
+  },
 };
 
 export interface AuthData {
@@ -195,6 +199,15 @@ export interface CriarTransacaoData {
   tipo: 'receita' | 'despesa';
   data_transacao: string;
   categoria_id?: string;
+}
+
+export interface CategoriaCatalogo {
+  id: string;
+  nome: string;
+  icone?: string | null;
+  cor?: string | null;
+  eh_padrao: boolean;
+  domicilio_id: string | null;
 }
 
 // Mantém os mesmos campos editáveis do create, mas SEM `tipo` —
