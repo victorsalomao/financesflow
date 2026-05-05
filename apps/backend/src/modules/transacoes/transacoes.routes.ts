@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { authenticate } from '../../plugins/authenticate'
 import { ok, erro } from '../../utils/resposta'
-import { criarTransacaoSchema, atualizarTransacaoSchema, filtrosTransacaoSchema, sugerirCategoriaSchema } from './transacoes.schema'
+import { criarTransacaoSchema, atualizarTransacaoSchema, filtrosTransacaoSchema, sugerirCategoriaSchema, interpretarSchema } from './transacoes.schema'
 import * as transacoesService from './transacoes.service'
 
 export async function transacoesRoutes(app: FastifyInstance) {
@@ -55,6 +55,23 @@ export async function transacoesRoutes(app: FastifyInstance) {
       return reply.send(ok(result))
     } catch (e: unknown) {
       return reply.status(400).send(erro(e instanceof Error ? e.message : 'Erro ao sugerir categoria'))
+    }
+  })
+
+  app.post('/interpretar', async (request, reply) => {
+    const parsed = interpretarSchema.safeParse(request.body)
+    if (!parsed.success) {
+      return reply.status(400).send(erro('Dados inválidos: ' + parsed.error.issues[0].message))
+    }
+    try {
+      const result = await transacoesService.interpretar(
+        request.usuario.authId,
+        request.usuario.token,
+        parsed.data,
+      )
+      return reply.send(ok(result))
+    } catch (e: unknown) {
+      return reply.status(400).send(erro(e instanceof Error ? e.message : 'Erro ao interpretar transação'))
     }
   })
 

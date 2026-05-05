@@ -1,6 +1,6 @@
 import { supabaseAuth } from '../../lib/supabase'
-import { categorizarTransacao } from '../../lib/ia'
-import type { CriarTransacaoInput, AtualizarTransacaoInput, FiltrosTransacaoInput, SugerirCategoriaInput } from './transacoes.schema'
+import { categorizarTransacao, interpretarTransacao } from '../../lib/ia'
+import type { CriarTransacaoInput, AtualizarTransacaoInput, FiltrosTransacaoInput, SugerirCategoriaInput, InterpretarInput } from './transacoes.schema'
 
 // Usa fn SECURITY DEFINER — bypassa RLS e retorna o domicilio_id pelo JWT do usuário
 async function getDomicilioId(db: ReturnType<typeof supabaseAuth>): Promise<string> {
@@ -135,5 +135,70 @@ export async function sugerirCategoria(
     categoria_id: cat?.id ?? null,
     categoria_nome: sugestao.categoria,
     confianca: sugestao.confianca,
+  }
+}
+
+function hojeISO(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export async function interpretar(authId: string, token: string, input: InterpretarInput) {
+  const db = supabaseAuth(token)
+  const domicilioId = await getDomicilioId(db)
+
+  // Busca categorias disponíveis do domicílio (padrão + customizadas)
+  const { data: categorias, error: errCat } = await db
+    .from('categorias')
+    .select('id, nome')
+    .or(`domicilio_id.is.null,domicilio_id.eq.${domicilioId}`)
+
+  if (errCat) {
+    console.error('[transacoes.interpretar] erro ao buscar categorias:', errCat)
+    throw new Error('Erro ao carregar categorias para interpretação')
+  }
+
+  const nomesDisponiveis = (categorias ?? []).map(c => c.nome)
+  const hoje = hojeISO()
+
+  const resultado = await interpretarTransacao(input.texto, hoje, nomesDisponiveis)
+
+  // Fallback total se a IA falhou
+  if (!resultado) {
+    return {
+      descricao: null,
+      valor: null,
+      data_transacao: null,
+      tipo: null,
+      categoria_id: null,
+      categoria_nome: null,
+      confianca_geral: 0,
+    }
+  }
+
+  // Resolve nome -> id
+  let categoriaId: string | null = null
+  if (resultado.categoria) {
+    const match = (categorias ?? []).find(c => c.nome === resultado.categoria)
+    categoriaId = match?.id ?? null
+  }
+
+  // Valida data ≤ hoje
+  let dataTransacao = resultado.data
+  if (dataTransacao && dataTransacao > hoje) {
+    dataTransacao = null
+  }
+
+  return {
+    descricao: resultado.descricao,
+    valor: resultado.valor,
+    data_transacao: dataTransacao,
+    tipo: resultado.tipo,
+    categoria_id: categoriaId,
+    categoria_nome: resultado.categoria,
+    confianca_geral: resultado.confianca_geral,
   }
 }

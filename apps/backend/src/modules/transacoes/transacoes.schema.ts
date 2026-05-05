@@ -26,7 +26,12 @@ export const sugerirCategoriaSchema = z.object({
   valor: z.number().positive(),
 })
 
+export const interpretarSchema = z.object({
+  texto: z.string().min(3).max(500),
+})
+
 export type CriarTransacaoInput = z.infer<typeof criarTransacaoSchema>
 export type AtualizarTransacaoInput = z.infer<typeof atualizarTransacaoSchema>
 export type FiltrosTransacaoInput = z.infer<typeof filtrosTransacaoSchema>
 export type SugerirCategoriaInput = z.infer<typeof sugerirCategoriaSchema>
+export type InterpretarInput = z.infer<typeof interpretarSchema>
