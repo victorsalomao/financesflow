@@ -272,7 +272,7 @@ export default function AddTransactionScreen({ navigation }: Props) {
             onChangeText={setCommandText}
             onSubmit={handleInterpretar}
             loading={captura.tipo === 'interpretando'}
-            disabled={false}
+            disabled={captura.tipo === 'interpretando'}
           />
 
           {captura.tipo === 'com-preview' && (
