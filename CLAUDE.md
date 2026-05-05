@@ -109,7 +109,7 @@ Tabelas principais:
 ```
 DATABASE_URL=postgresql://postgres.[project-id]:[senha]@aws-0-[region].pooler.supabase.com:6543/postgres
 ```
-E rodar `npx tsx scripts/migrate.ts` (script já existe em `apps/backend/scripts/migrate.ts`).
+E rodar `npx tsx scripts/migrate.ts` (script em `apps/backend/scripts/migrate.ts` aplica todas as migrations de `banco/migrations/` em ordem alfanumérica; valida `DATABASE_URL` antes de conectar).
 
 ---
 
