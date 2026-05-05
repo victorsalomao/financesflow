@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable,
   ActivityIndicator, RefreshControl, Platform,
@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { api, DashboardData, CategoriaData, MetaData, TransacaoData, DivisaoData } from '../../services/api';
 import { formatCurrency, currentMonthParam } from '../../utils/format';
@@ -392,7 +392,11 @@ export default function DashboardScreen() {
     }
   }, [token, viewDate]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function prevMonth() {
     setViewDate(d => {
