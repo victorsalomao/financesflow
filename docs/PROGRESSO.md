@@ -93,6 +93,23 @@ Usou apenas pacotes já instalados + `@expo/vector-icons` (bundled no Expo SDK 5
 
 ---
 
+## Sessão 3 — Captura Assistida + Robustez (planejada para 2026-05-04)
+
+### Escopo
+- Persistência de token (AsyncStorage)
+- Fix do bug de categoria não enviada ao backend
+- Refresh automático do Dashboard e Lista após operações
+- Sugestão de categoria via IA conforme digita descrição
+- Captura assistida: command bar com parser de linguagem natural
+
+### Spec
+`docs/superpowers/specs/2026-05-04-captura-assistida-design.md`
+
+### Plano
+`docs/superpowers/plans/2026-05-04-captura-assistida.md`
+
+---
+
 ## Estrutura de Arquivos (completa)
 
 ```
@@ -137,6 +154,11 @@ financesflow/
 │           ├── context/AuthContext.tsx
 │           ├── services/api.ts
 │           ├── utils/format.ts
+│           ├── theme/
+│           │   └── tokens.ts          # tokens de cor, spacing, radius, shadows
+│           ├── constants/
+│           │   └── categories.ts      # strings hardcoded de categorias com emoji + cor
+│           │                          # (resíduo do MVP, será substituído por CategoriasContext)
 │           └── navigation/
 │               ├── RootNavigator.tsx
 │               ├── AuthNavigator.tsx
@@ -144,7 +166,11 @@ financesflow/
 │           └── screens/
 │               ├── auth/              # Login, Register, Domicilio, Convite
 │               ├── dashboard/         # DashboardScreen
-│               ├── transactions/      # TransactionList, AddTransaction
+│               ├── transactions/
+│               │   ├── TransactionListScreen.tsx
+│               │   ├── AddTransactionScreen.tsx
+│               │   ├── TransactionDetailScreen.tsx  # push, valores read-only, botões Editar/Excluir
+│               │   └── EditTransactionScreen.tsx    # modal, mesmo layout do Add com tipo desabilitado
 │               ├── goals/             # GoalsScreen
 │               └── profile/           # ProfileScreen
 │
@@ -245,8 +271,10 @@ cd services/ia
 - [ ] Persistência de token com `@react-native-async-storage/async-storage` (usuário fica logado)
 - [ ] Fontes Sora/Inter com `@expo-google-fonts`
 - [ ] Integração com IA para sugestão de categoria na tela de nova transação
-- [ ] Tela de detalhes/edição de transação
+- [x] Tela de detalhes/edição de transação — `screens/transactions/TransactionDetailScreen.tsx` + `screens/transactions/EditTransactionScreen.tsx`
 - [ ] Filtros avançados na lista de transações (período, categoria)
 - [ ] Tela de divisão de despesas (`GET /dashboard/divisao`)
 - [ ] Tela de detalhes do domicílio com código de convite
 - [ ] Push notifications
+
+> **Bug pendente:** categoria selecionada manualmente não está sendo enviada ao backend (`AddTransactionScreen.handleSalvar`). Resolvido na entrega "Captura Assistida + Robustez do MVP".
