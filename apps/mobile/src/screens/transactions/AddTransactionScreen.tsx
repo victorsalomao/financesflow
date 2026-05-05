@@ -12,6 +12,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { T } from '../../theme/tokens';
 import { CATEGORIAS } from '../../constants/categories';
+import { useCategorias } from '../../context/CategoriasContext';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'AddTransaction'> };
 type Tipo = 'despesa' | 'receita';
@@ -50,7 +51,8 @@ export default function AddTransactionScreen({ navigation }: Props) {
   const [dataSelecionada, setDataSelecionada] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
+  const [categoriaIdSelecionada, setCategoriaIdSelecionada] = useState<string | null>(null);
+  const { categorias, getByNome } = useCategorias();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const popAnim = useRef(new Animated.Value(0)).current;
@@ -92,6 +94,7 @@ export default function AddTransactionScreen({ navigation }: Props) {
         valor,
         tipo,
         data_transacao: formatDateISO(dataSelecionada),
+        categoria_id: categoriaIdSelecionada ?? undefined,
       }, token!);
       setSaved(true);
     } catch (e: unknown) {
@@ -283,24 +286,27 @@ export default function AddTransactionScreen({ navigation }: Props) {
             Categoria
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {CATEGORIAS.map(cat => {
-              const selected = categoriaSelecionada === cat.nome;
+            {categorias.map(cat => {
+              const visual = CATEGORIAS.find(c => c.nome === cat.nome);
+              const emoji = visual?.emoji ?? '📦';
+              const cor = cat.cor ?? visual?.cor ?? T.violet;
+              const selected = categoriaIdSelecionada === cat.id;
               return (
                 <Pressable
-                  key={cat.nome}
-                  onPress={() => setCategoriaSelecionada(selected ? '' : cat.nome)}
+                  key={cat.id}
+                  onPress={() => setCategoriaIdSelecionada(selected ? null : cat.id)}
                   style={{
                     width: '22.5%', aspectRatio: 1, borderRadius: 14,
-                    backgroundColor: selected ? cat.cor + '22' : T.card,
+                    backgroundColor: selected ? cor + '22' : T.card,
                     borderWidth: 1,
-                    borderColor: selected ? cat.cor + '50' : T.border,
+                    borderColor: selected ? cor + '50' : T.border,
                     justifyContent: 'center', alignItems: 'center', gap: 4,
                   }}
                 >
-                  <Text style={{ fontSize: 20 }}>{cat.emoji}</Text>
+                  <Text style={{ fontSize: 20 }}>{emoji}</Text>
                   <Text style={{
                     fontSize: 9, fontWeight: '600', letterSpacing: 0.3,
-                    color: selected ? cat.cor : T.muted, textAlign: 'center',
+                    color: selected ? cor : T.muted, textAlign: 'center',
                   }}>
                     {cat.nome}
                   </Text>
