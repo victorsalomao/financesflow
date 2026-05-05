@@ -1,0 +1,18 @@
+# Normaliza line endings para evitar flip-flop entre Windows/macOS/Linux
+* text=auto eol=lf
+
+# PowerShell scripts permanecem CRLF (interpretador Windows espera assim)
+*.ps1 text eol=crlf
+
+# Binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
